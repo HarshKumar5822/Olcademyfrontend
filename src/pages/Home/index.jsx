@@ -102,7 +102,7 @@ const HomePage = () => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
- const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   //Mobile UI or Desktop Ui
   useEffect(() => {
     const handleResize = () => {
@@ -141,7 +141,7 @@ const HomePage = () => {
     }
   };
 
-  
+
 
   // Updated fetchHomeData with scent integration
   useEffect(() => {
@@ -282,9 +282,9 @@ const HomePage = () => {
   );
 
   const validateEmail = (email) => {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  return regex.test(email);
-};
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    return regex.test(email);
+  };
 
 
   // const handleSubscribe = () => {
@@ -298,47 +298,47 @@ const HomePage = () => {
   // };
 
 
-const handleSubscribe = async () => {
-  // setAcceptTerms(true);
-  if (!email) {
-    addNotification("Please enter your email", "error", null, "general");
-    return;
-  }
-
-  if (!validateEmail(email)) {
-    addNotification("Please enter a valid email address", "error", null, "general");
-    return;
-  }
-
-  if (!acceptTerms) {
-    addNotification("Please accept terms & conditions", "error", null, "general");
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/subscribe`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
-    console.log("Response status:", res.status);
-
-    const data = await res.json();
-
-    if (data.success) {
-      addNotification("Welcome to the Inner Circle!", "success", email, "general");
-      setEmail("");
-      setAcceptTerms(false);
-    } else {
-      addNotification(data.message, "error", null, "general");
+  const handleSubscribe = async () => {
+    // setAcceptTerms(true);
+    if (!email) {
+      addNotification("Please enter your email", "error", null, "general");
+      return;
     }
-  } catch (error) {
-    console.error("Subscribe error:", error);
-    addNotification("Something went wrong. Please try again.", "error", null, "general");
-  }
-};
+
+    if (!validateEmail(email)) {
+      addNotification("Please enter a valid email address", "error", null, "general");
+      return;
+    }
+
+    if (!acceptTerms) {
+      addNotification("Please accept terms & conditions", "error", null, "general");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/subscribe`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+      console.log("Response status:", res.status);
+
+      const data = await res.json();
+
+      if (data.success) {
+        addNotification("Welcome to the Inner Circle!", "success", email, "general");
+        setEmail("");
+        setAcceptTerms(false);
+      } else {
+        addNotification(data.message, "error", null, "general");
+      }
+    } catch (error) {
+      console.error("Subscribe error:", error);
+      addNotification("Something went wrong. Please try again.", "error", null, "general");
+    }
+  };
 
 
 
@@ -568,8 +568,8 @@ const handleSubscribe = async () => {
 
           {/* UPDATED Add to Cart Button - Opens Cart Sidebar when product is in cart */}
           <motion.button
-            onClick={productInCart ? (e) => { 
-              e.stopPropagation(); 
+            onClick={productInCart ? (e) => {
+              e.stopPropagation();
               setIsCartOpen(true); // CHANGED: Opens cart sidebar instead of navigating
             } : handleAddToCart}
             disabled={isAddingToCart}
@@ -604,12 +604,12 @@ const handleSubscribe = async () => {
     const hasMoreProducts = products.length > 4;
 
     return isMobile ? (
-         <ProductCardsMobile
-          title={title}
-          products={products}
-          darkMode={darkMode}
-        />
-      ) :  (
+      <ProductCardsMobile
+        title={title}
+        products={products}
+        darkMode={darkMode}
+      />
+    ) : (
       <section className="py-10 sm:py-14 lg:py-16 px-4 sm:px-6 bg-[#F8F6F3] dark:bg-[#0d0603]">
         <div className="max-w-[1555px] mx-auto">
           {/* Section Title - RESPONSIVE */}
@@ -860,9 +860,9 @@ const handleSubscribe = async () => {
     if (!items.length) return null;
 
     return (
-      <section className="relative w-full py-10 sm:py-12 px-4 sm:px-6" style={{ backgroundColor: '#F9F7F6' }}>
+      <section className="relative w-full py-4 sm:py-6 px-4 sm:px-6" style={{ backgroundColor: '#F9F7F6' }}>
         <div className="max-w-7xl mx-auto">
-          <div className="mb-6 sm:mb-8 text-center">
+          <div className="mb-2 sm:mb-4 text-center">
             <h2 className="font-[Playfair] font-bold text-2xl sm:text-3xl md:text-[36px]" style={{ color: '#271004' }}>
               Our Favorites
             </h2>
@@ -1202,13 +1202,13 @@ const handleSubscribe = async () => {
       <Header />
       <NotificationSystem />
       <QuickViewModal />
-      
+
       {/* CART SIDEBAR - ADD THIS */}
       <ProductCartSection isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
 
       <main className="flex-1" style={{ backgroundColor: '#F9F7F6' }}>
         {/* HeroSection */}
-         {banners.hero &&
+        {banners.hero &&
           (isMobile ? (
             <HeroSectionMobile />
           ) : (
@@ -1315,23 +1315,23 @@ const handleSubscribe = async () => {
                 </Button>
               </div>
 
-                {/* ✅ ADD THIS BLOCK (THIS WAS MISSING) */}
-  <div className="flex items-center justify-center gap-3 mb-4">
-    <input
-      type="checkbox"
-      id="acceptTerms"
-      checked={acceptTerms}
-      onChange={(e) => setAcceptTerms(e.target.checked)}
-      className="w-4 h-4 cursor-pointer accent-[#CDAF6E]"
-    />
+              {/* ✅ ADD THIS BLOCK (THIS WAS MISSING) */}
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <input
+                  type="checkbox"
+                  id="acceptTerms"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  className="w-4 h-4 cursor-pointer accent-[#CDAF6E]"
+                />
 
-    <label
-      htmlFor="acceptTerms"
-      className="text-sm text-[#EFE9E6] cursor-pointer select-none"
-    >
-      I agree to the Terms & Conditions
-    </label>
-  </div>
+                <label
+                  htmlFor="acceptTerms"
+                  className="text-sm text-[#EFE9E6] cursor-pointer select-none"
+                >
+                  I agree to the Terms & Conditions
+                </label>
+              </div>
 
               <p className="text-[14px] text-[#EFE9E6]">
                 By joining, you'll receive updates on limited editions and private events.

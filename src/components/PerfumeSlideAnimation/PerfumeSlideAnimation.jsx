@@ -2,25 +2,21 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import styles from './PerfumeSlideAnimation.module.css';
 
 const POS_CLASS_BY_OFFSET = {
-  '-3': 'posNegative3',
   '-2': 'posNegative2',
   '-1': 'posNegative1',
   '0': 'pos0',
   '1': 'pos1',
   '2': 'pos2',
-  '3': 'pos3',
-  '4': 'pos4' // For smooth entry from right
+  '3': 'pos2' // Handle wrap gracefully if needed, though strictly we cycle 0-4
 };
 
 const Z_BY_OFFSET = {
-  '-3': 20,
   '-2': 30,
   '-1': 40,
   '0': 50,
   '1': 40,
   '2': 30,
-  '3': 20,
-  '4': 10
+  '3': 20
 };
 
 const prefersReducedMotion = () =>
@@ -40,24 +36,21 @@ const offsetForIndex = (index, activeIndex, len) => {
   if (!len) return 0;
   // Calculate raw difference
   let diff = (index - activeIndex) % len;
-  
-  // Normalize to range [-3, 3] for 7 items
-  // If len is 7: 
+
+  // Normalize to range [-2, 2] for 5 items
+  // If len is 5: 
   // diff 0 -> 0
   // diff 1 -> 1
   // diff 2 -> 2
-  // diff 3 -> 3
-  // diff 4 -> -3 (wrapped)
-  // diff 5 -> -2
-  // diff 6 -> -1
-  // diff -1 -> -1 (js modulo can be negative)
-  
+  // diff 3 -> -2
+  // diff 4 -> -1
+
   // Handle Javascript negative modulo
   if (diff < 0) diff += len;
-  
+
   // Adjust to be centered around 0
-  if (diff > 3) diff -= len;
-  
+  if (diff > 2) diff -= len;
+
   return diff;
 };
 
@@ -65,15 +58,15 @@ const PerfumeSlideAnimation = memo(
   ({ products = [], intervalMs = 3000, onProductClick }) => {
     const items = useMemo(() => {
       let cleaned = (Array.isArray(products) ? products : []).filter((p) => p && p._id);
-      
-      // Ensure we have exactly 7 items for the symmetry to work
-      if (cleaned.length > 0 && cleaned.length < 7) {
-        while (cleaned.length < 7) {
+
+      // Ensure we have exactly 5 items
+      if (cleaned.length > 0 && cleaned.length < 5) {
+        while (cleaned.length < 5) {
           cleaned = [...cleaned, ...cleaned];
         }
       }
-      
-      return cleaned.slice(0, 7);
+
+      return cleaned.slice(0, 5);
     }, [products]);
 
     const len = items.length;
@@ -102,7 +95,7 @@ const PerfumeSlideAnimation = memo(
     // But standard circular carousel usually just swaps the hidden items.
     // Let's stick to the 7 visible items first, as -3 to +3 wraps around behind nicely if not visible.
     // If we want smooth entry from offscreen, we might need a duplicate.
-    
+
     // Actually, simply mapping the 7 items to positions is enough if the transition handles the movement.
     // The only jump is from -3 (left) to +3 (right). We need to make sure that jump is invisible (e.g. opacity 0 or z-index low).
     // Our CSS has transition on 'left' property.
@@ -125,14 +118,14 @@ const PerfumeSlideAnimation = memo(
     // Fix: Ensure z-index is lowest during jump, or use a ghost.
     // Let's rely on standard circular buffer behavior for now but maybe hide the one jumping?
     // In the previous code there was a ghost card.
-    
+
     return (
       <div className={styles.perfumeSlideAnimation}>
         {items.map((item, index) => {
           const offset = offsetForIndex(index, activeIndex, len);
           const posKey = POS_CLASS_BY_OFFSET[String(offset)];
           const posClass = styles[posKey];
-          
+
           // To prevent "flying across" when wrapping from -3 to 3 (or vice versa),
           // we can check if it's the wrapping item. 
           // But actually, as activeIndex increases, offset decreases: 3 -> 2 ... -> -3.
@@ -144,7 +137,7 @@ const PerfumeSlideAnimation = memo(
           // A common trick is to not render it, or have a "hidden" class that removes transition?
           // OR, since it's at the back, maybe it's fine? 
           // Previous implementation had specific handling presumably.
-          
+
           return (
             <div
               key={item._id}
@@ -153,13 +146,13 @@ const PerfumeSlideAnimation = memo(
               role="button"
               tabIndex={0}
               onClick={(e) => {
-                 e.stopPropagation();
-                 onProductClick?.(item);
+                e.stopPropagation();
+                onProductClick?.(item);
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
-                   e.stopPropagation();
-                   onProductClick?.(item);
+                  e.stopPropagation();
+                  onProductClick?.(item);
                 }
               }}
             >
@@ -172,7 +165,7 @@ const PerfumeSlideAnimation = memo(
               <div className={styles.textContainer}>
                 <div className={styles.title}>{getTitle(item)}</div>
                 {/* Description hidden via CSS */}
-                <div className={styles.description}>{item.description}</div> 
+                <div className={styles.description}>{item.description}</div>
               </div>
             </div>
           );

@@ -1,6 +1,7 @@
 .perfumeSlideAnimation {
   width: 100%;
-  height: 600px;
+  height: 310px;
+  /* Reduced to 310px to minimize bottom whitespace */
   position: relative;
   background-color: transparent;
   overflow: hidden;
@@ -82,107 +83,72 @@
 
 /* 
    POSITIONS: 0 is center. 
-   +/- 1, 2, 3 are symmetric.
-   Ghost card is at pos +4 (initially offscreen right)
+   Cards reduced by ~30%.
+   Padding added to ensure no overlap.
 */
 
 /* CENTER (0) */
+/* Original: 320x420. New (approx -28%): 230x300 */
 .pos0 {
-  width: 320px;
-  height: 420px;
-  top: calc(50% - 210px);
-  left: calc(50% - 160px);
-  /* Center - half width */
+  width: 230px;
+  height: 300px;
+  top: calc(50% - 150px);
+  left: calc(50% - 115px);
   z-index: 50;
   opacity: 1;
-  font-size: 24px;
-  padding: 16px;
-  box-shadow: 0px 0px 20px rgba(121, 48, 15, 0.4);
-}
-
-/* LEVEL 1 (+/- 1) - Slight Overlap */
-.pos1 {
-  width: 260px;
-  height: 380px;
-  top: calc(50% - 190px);
-  left: calc(50% + 140px);
-  /* 160 - 20 overlap */
-  z-index: 40;
-  opacity: 0.9;
   font-size: 20px;
   padding: 12px;
+  box-shadow: 0px 0px 15px rgba(121, 48, 15, 0.3);
+}
+
+/* LEVEL 1 (+/- 1) */
+/* Original: 260x380. New: 180x260 */
+/* Gap: Center half (115) + padding (20) = 135 start */
+.pos1 {
+  width: 180px;
+  height: 260px;
+  top: calc(50% - 130px);
+  left: calc(50% + 135px);
+  z-index: 40;
+  opacity: 0.9;
+  font-size: 16px;
+  padding: 10px;
 }
 
 .posNegative1 {
-  width: 260px;
-  height: 380px;
-  top: calc(50% - 190px);
-  left: calc(50% - 400px);
-  /* -160 - 260 + 20 overlap */
+  width: 180px;
+  height: 260px;
+  top: calc(50% - 130px);
+  left: calc(50% - 315px);
+  /* -115 (center half) - 20 (gap) - 180 (width) */
   z-index: 40;
   opacity: 0.9;
-  font-size: 20px;
-  padding: 12px;
-}
-
-/* LEVEL 2 (+/- 2) - More Overlap */
-.pos2 {
-  width: 220px;
-  height: 340px;
-  top: calc(50% - 170px);
-  left: calc(50% + 360px);
-  /* 140 + 260 - 40 overlap */
-  z-index: 30;
-  opacity: 0.7;
   font-size: 16px;
   padding: 10px;
+}
+
+/* LEVEL 2 (+/- 2) */
+/* Original: 220x340. New: 150x220 */
+/* Gap from pos1: pos1 start (135) + pos1 width (180) + gap (20) = 335 start */
+.pos2 {
+  width: 150px;
+  height: 220px;
+  top: calc(50% - 110px);
+  left: calc(50% + 335px);
+  z-index: 30;
+  opacity: 0.7;
+  font-size: 14px;
+  padding: 8px;
 }
 
 .posNegative2 {
-  width: 220px;
-  height: 340px;
-  top: calc(50% - 170px);
-  left: calc(50% - 580px);
-  /* -400 - 220 + 40 overlap -> -580 */
+  width: 150px;
+  height: 220px;
+  top: calc(50% - 110px);
+  left: calc(50% - 485px);
+  /* -315 (pos1 start) - 20 (gap) - 150 (width) = -485 */
   z-index: 30;
   opacity: 0.7;
-  font-size: 16px;
-  padding: 10px;
-}
-
-/* LEVEL 3 (+/- 3) */
-.pos3 {
-  width: 180px;
-  height: 300px;
-  top: calc(50% - 150px);
-  left: calc(50% + 540px);
-  /* 360 + 220 - 40 overlap */
-  z-index: 20;
-  opacity: 0.5;
-  font-size: 14px;
-  padding: 8px;
-}
-
-.posNegative3 {
-  width: 180px;
-  height: 300px;
-  top: calc(50% - 150px);
-  left: calc(50% - 720px);
-  /* -580 - 180 + 40 overlap -> -720 */
-  z-index: 20;
-  opacity: 0.5;
-  font-size: 14px;
-  padding: 8px;
-}
-
-/* Ghost / Offscreen Right (+4) */
-.pos4 {
-  width: 180px;
-  height: 300px;
-  top: calc(50% - 150px);
-  left: calc(50% + 700px);
-  z-index: 10;
-  opacity: 0;
   font-size: 14px;
   padding: 8px;
 }
@@ -190,75 +156,60 @@
 /* Responsive Handling */
 @media (max-width: 1200px) {
 
-  /* Scale down horizontally */
+  /* Scale down slightly more */
   .pos1 {
-    left: calc(50% + 140px);
+    left: calc(50% + 120px);
   }
 
   .posNegative1 {
-    left: calc(50% - 420px);
+    left: calc(50% - 300px);
   }
 
   .pos2 {
-    left: calc(50% + 380px);
+    left: calc(50% + 290px);
   }
 
   .posNegative2 {
-    left: calc(50% - 620px);
-  }
-
-  .pos3 {
-    left: calc(50% + 580px);
-  }
-
-  .posNegative3 {
-    left: calc(50% - 780px);
+    left: calc(50% - 440px);
   }
 }
 
 @media (max-width: 768px) {
   .perfumeSlideAnimation {
-    height: 400px;
+    height: 350px;
   }
 
+  /* Center mobile */
   .pos0 {
-    width: 220px;
-    height: 300px;
-    top: calc(50% - 150px);
-    left: calc(50% - 110px);
+    width: 180px;
+    height: 240px;
+    top: calc(50% - 120px);
+    left: calc(50% - 90px);
     font-size: 16px;
   }
 
+  /* Level 1 mobile */
   .pos1 {
-    width: 180px;
-    height: 260px;
-    top: calc(50% - 130px);
-    left: calc(50% + 80px);
+    width: 140px;
+    height: 200px;
+    top: calc(50% - 100px);
+    left: calc(50% + 100px);
     font-size: 14px;
   }
 
   .posNegative1 {
-    width: 180px;
-    height: 260px;
-    top: calc(50% - 130px);
-    left: calc(50% - 260px);
+    width: 140px;
+    height: 200px;
+    top: calc(50% - 100px);
+    left: calc(50% - 240px);
     font-size: 14px;
   }
 
   .pos2 {
     display: none;
-    /* Hide outer cards on very small screens if needed, or scale more */
   }
 
   .posNegative2 {
-    display: none;
-  }
-
-  .pos3 {
-    display: none;
-  }
-
-  .posNegative3 {
     display: none;
   }
 }
