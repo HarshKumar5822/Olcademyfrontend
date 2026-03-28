@@ -405,20 +405,13 @@ const BestSellersCollection = () => {
 
           {/* Add to Cart Button */}
           <motion.button
-            onClick={
-              scentInCart
-                ? (e) => {
-                  e.stopPropagation();
-                  setIsCartOpen(true);
-                }
-                : handleAddToCart
-            }
+            onClick={handleAddToCart}
             disabled={isAddingToCart}
             whileHover={{ scale: 1.02, opacity: 0.9 }}
             whileTap={{ scale: 0.98 }}
             className="flex items-center justify-center gap-2 sm:gap-2.5 text-white font-bold uppercase transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed w-full h-[54px] sm:h-[60px] text-sm sm:text-base md:text-lg -mx-3.5 px-3.5"
             style={{
-              backgroundColor: scentInCart ? "#431A06" : "#431A06",
+              backgroundColor: "#431A06",
               fontFamily: "Manrope, sans-serif",
               letterSpacing: "0.05em",
               width: "calc(100% + 28px)",
@@ -426,7 +419,7 @@ const BestSellersCollection = () => {
           >
             <ShoppingCart size={20} className="sm:w-[24px] sm:h-[24px]" />
             <span>
-              {isAddingToCart ? "Adding..." : scentInCart ? "View Cart" : "Add to Cart"}
+              {isAddingToCart ? "Adding..." : "Add to Cart"}
             </span>
           </motion.button>
         </div>
@@ -589,18 +582,6 @@ const BestSellersCollection = () => {
                 </div>
 
                 <div className="flex gap-4">
-                  {productInQuickViewCart ? (
-                    <button
-                      onClick={() => {
-                        setIsCartOpen(true);
-                        handleClose();
-                      }}
-                      className="flex-1 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:via-teal-700 hover:to-cyan-700 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 flex items-center justify-center space-x-2 border border-emerald-400/30 shadow-emerald-500/20"
-                    >
-                      <ShoppingCart size={20} />
-                      <span>View in Cart</span>
-                    </button>
-                  ) : (
                     <button
                       onClick={handleQuickViewAddToCart}
                       className="flex-1 bg-gradient-to-r from-[#79300f] to-[#5a2408] text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 flex items-center justify-center space-x-2"
@@ -608,7 +589,6 @@ const BestSellersCollection = () => {
                       <ShoppingBag size={20} />
                       <span>Add to Cart</span>
                     </button>
-                  )}
                   <button
                     onClick={handleQuickViewWishlist}
                     className="px-4 py-3 border-2 border-[#79300f] text-[#79300f] rounded-xl hover:bg-[#79300f] hover:text-white transition-all duration-300"

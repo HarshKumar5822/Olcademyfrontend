@@ -211,19 +211,7 @@ const PerfectDiscoverGiftsCollection = () => {
         {/* ADD / VIEW CART BUTTON */}
         <div className="w-full flex flex-col items-center pb-6">
           <motion.button
-            onClick={(e) => {
-              // prevent parent card click/navigation
-              if (e && e.stopPropagation) e.stopPropagation();
-
-              // if product already in cart -> open right-side sidebar (new behavior)
-              if (productInCart) {
-                setIsCartOpen(true);
-                return;
-              }
-
-              // otherwise add to cart
-              handleAddToCart(e);
-            }}
+            onClick={handleAddToCart}
             whileHover={{ scale: 1.02 }}
             className="flex items-center justify-center gap-2 text-white font-bold uppercase w-full h-[54px] rounded-none"
             style={{
@@ -239,11 +227,7 @@ const PerfectDiscoverGiftsCollection = () => {
             )}
 
             <span>
-              {isAddingToCart
-                ? "Adding..."
-                : productInCart
-                  ? "View Cart"
-                  : "Add to Cart"}
+              {isAddingToCart ? "Adding..." : "Add to Cart"}
             </span>
           </motion.button>
         </div>

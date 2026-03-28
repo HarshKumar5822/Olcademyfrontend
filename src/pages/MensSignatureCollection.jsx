@@ -182,17 +182,7 @@ const MensSignatureCollection = () => {
         {/* BUTTON - prevent bubbling so parent card click doesn't run */}
         <div className="w-full flex flex-col items-center" style={{ paddingBottom: '1.5rem' }}>
           <motion.button
-            onClick={(e) => {
-              // prevent the card click
-              if (e && e.stopPropagation) e.stopPropagation();
-
-              if (productInCart) {
-                // opens cart sidebar from right side (same behaviour as MensCollection)
-                setIsCartOpen(true);
-              } else {
-                handleAddToCart(e);
-              }
-            }}
+            onClick={handleAddToCart}
             whileHover={{ scale: 1.02 }}
             className="flex items-center justify-center gap-2 text-white font-bold uppercase w-full h-[54px] rounded-none"
             style={{
@@ -204,7 +194,7 @@ const MensSignatureCollection = () => {
             }}
           >
             <ShoppingCart size={20} />
-            <span>{isAddingToCart ? "Adding..." : productInCart ? "View Cart" : "Add to Cart"}</span>
+            <span>{isAddingToCart ? "Adding..." : "Add to Cart"}</span>
           </motion.button>
         </div>
       </motion.div>

@@ -393,16 +393,13 @@ const SearchResults = () => {
 
           {/* Add to Cart Button */}
           <motion.button
-            onClick={productInCart ? (e) => {
-              e.stopPropagation();
-              setIsCartOpen(true);
-            } : handleAddToCart}
+            onClick={handleAddToCart}
             disabled={isAddingToCart}
             whileHover={{ scale: 1.02, opacity: 0.9 }}
             whileTap={{ scale: 0.98 }}
             className="flex items-center justify-center gap-2 sm:gap-2.5 text-white font-bold uppercase transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed w-full h-[54px] sm:h-[60px] text-sm sm:text-base md:text-lg -mx-3.5 px-3.5"
             style={{
-              backgroundColor: productInCart ? '#431A06' : '#431A06',
+              backgroundColor: '#431A06',
               fontFamily: 'Manrope, sans-serif',
               letterSpacing: '0.05em',
               width: 'calc(100% + 28px)'
@@ -410,7 +407,7 @@ const SearchResults = () => {
           >
             <ShoppingCart size={20} className="sm:w-[24px] sm:h-[24px]" />
             <span>
-              {isAddingToCart ? 'Adding...' : productInCart ? 'View Cart' : 'Add to Cart'}
+              {isAddingToCart ? 'Adding...' : 'Add to Cart'}
             </span>
           </motion.button>
         </div>

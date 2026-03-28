@@ -384,16 +384,13 @@ const WomensCollection = () => {
           </p>
 
           <motion.button
-            onClick={productInCart ? (e) => {
-              e.stopPropagation();
-              setIsCartOpen(true);
-            } : handleAddToCart}
+            onClick={handleAddToCart}
             disabled={isAddingToCart}
             whileHover={{ scale: 1.02, opacity: 0.9 }}
             whileTap={{ scale: 0.98 }}
             className="flex items-center justify-center gap-2 text-white font-bold uppercase transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed w-full h-[40px] sm:h-[45px] text-[10px] sm:text-xs md:text-sm -mx-3 px-3 mt-auto"
             style={{
-              backgroundColor: productInCart ? '#431A06' : '#431A06',
+              backgroundColor: '#431A06',
               fontFamily: 'Manrope, sans-serif',
               letterSpacing: '0.05em',
               width: 'calc(100% + 24px)'
@@ -401,7 +398,7 @@ const WomensCollection = () => {
           >
             <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
             <span>
-              {isAddingToCart ? 'Adding...' : productInCart ? 'View Cart' : 'Add to Cart'}
+              {isAddingToCart ? 'Adding...' : 'Add to Cart'}
             </span>
           </motion.button>
         </div>

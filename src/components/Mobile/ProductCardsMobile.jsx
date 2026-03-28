@@ -158,13 +158,13 @@ const ProductCardsMobile = ({ title, products = [], darkMode, addNotification })
           </p>
 
           <button
-            onClick={productInCart ? () => navigate('/cart') : handleAddToCart}
+            onClick={handleAddToCart}
             disabled={isAddingToCart}
             className="flex items-center justify-center gap-2 text-white font-bold uppercase h-[42px] w-full text-xs mt-auto"
             style={{ backgroundColor: '#431A06' }}
           >
             <ShoppingCart size={16} />
-            {isAddingToCart ? 'Adding...' : productInCart ? 'View Cart' : 'Add to Cart'}
+            {isAddingToCart ? 'Adding...' : 'Add to Cart'}
           </button>
         </div>
       </motion.div>

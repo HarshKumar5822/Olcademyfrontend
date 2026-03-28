@@ -44,6 +44,8 @@ const SearchResults = lazy(() => import('./pages/SearchResults'));
 const AboutPage = lazy(() => import('./components/common/AboutPage'));
 const UserProfile = lazy(() => import('./components/UserProfile'));
 const DiscoverCollection = lazy(() => import('./pages/DiscoverTheCollection'));
+const SignatureCollection = lazy(() => import('./pages/SignatureCollection'));
+const FragrantFavoritesCollection = lazy(() => import('./pages/FragrantFavoritesCollection'));
 
 const AppRoutes = ({ darkMode, setDarkMode }) => {
   return (
@@ -62,6 +64,8 @@ const AppRoutes = ({ darkMode, setDarkMode }) => {
                 <Route path="/discover-collection" element={<DiscoverCollection />} />
                 <Route path="/mens-collection" element={<MensCollection />} />
                 <Route path="/womens-collection" element={<Womenscollection />} />
+                <Route path="/signature-collection" element={<SignatureCollection />} />
+                <Route path="/fragrant-favorites-collection" element={<FragrantFavoritesCollection />} />
                 <Route path="/all-fragrances" element={<AllFragrancesSection />} />
                 <Route path="/unisex-collection" element={<UnisexCollection />} />
                 <Route path="/gift-collection" element={<GiftCollection />} />

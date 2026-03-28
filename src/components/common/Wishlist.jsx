@@ -436,9 +436,7 @@ const Wishlist = () => {
                 >
                   <ShoppingCart size={18} />
                   <span>
-                    {isInCart(item.id, item.selectedSize)
-                      ? 'View Cart'
-                      : 'Add to Cart'}
+                    Add to Cart
                   </span>
                 </button>
               </motion.div>

@@ -105,9 +105,9 @@ const Header = ({ darkMode, setDarkMode }) => {
 
   const isActiveNavItem = (path) => location.pathname === path;
 
-  const currentHeight = isMobile ? MOBILE_HEIGHT : STICKY_HEIGHT;
+  const currentHeight = isMobile ? MOBILE_HEIGHT : (isScrolled ? STICKY_HEIGHT : INITIAL_HEIGHT);
 
-  const logoTop = isScrolled ? '18px' : '15px';
+  const logoTop = isScrolled ? '18px' : '10px';
   const logoLeft = isScrolled ? '40px' : '50%';
   const logoTransform = isScrolled ? 'translateX(0%)' : 'translateX(-50%)';
 
@@ -225,14 +225,15 @@ const Header = ({ darkMode, setDarkMode }) => {
           className="fixed top-0 left-0 right-0 z-[9999]"
           style={{
             width: '100%',
-            height: STICKY_HEIGHT,  // Always use sticky height
+            height: currentHeight,
             border: '1px solid #B59B8E',
             backgroundColor: '#ffffff',
+
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)'
           }}
         >
-          <div className="relative w-full h-full max-w-full mx-auto px-[52px]">
+          <div className="relative w-full h-full max-w-full mx-auto px-[52px] flex items-center justify-between">
             <div
               className="absolute flex items-center transition-all duration-300"
               style={{
@@ -280,8 +281,10 @@ const Header = ({ darkMode, setDarkMode }) => {
                 pointerEvents: 'auto',
                 zIndex: 10000,
                 flex: 1,
-                justifyContent: 'center'
+                justifyContent: 'center',
+                marginTop: isScrolled ? '0' : '35px' // Push nav down when not scrolled
               }}
+
             >
               {navItems.map((item) => (
                 <div
@@ -400,41 +403,34 @@ const Header = ({ darkMode, setDarkMode }) => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 8 }}
                         transition={{ duration: 0.2 }}
-                        className="absolute top-full mt-2 right-0 shadow-lg"
+                        className="absolute top-full mt-2 right-0 shadow-lg rounded-md overflow-hidden bg-[#F9F7F6]"
                         style={{
-                          width: '26px',
-                          height: '26px',
-                          backgroundColor: '#341405',
-                          color: '#fff',
-                          fontSize: '12px'
+                          minWidth: '150px',
+                          border: '1px solid #B59B8E',
+                          padding: '8px 0',
+                          zIndex: 10050
                         }}
                       >
                         <Link
                           to="/userProfile"
                           onClick={() => setIsUserDropdownOpen(false)}
-                          className="block py-2"
-                          style={{ color: '#341405', fontSize: '16px' }}
+                          className="block px-4 py-2 hover:bg-[#E8D4A0] transition-colors"
+                          style={{ color: '#341405', fontSize: '15px', fontWeight: '500' }}
                         >
-                          <Link
-                            to="/userProfile"
-                            onClick={() => setIsUserDropdownOpen(false)}
-                            className="block py-2"
-                            style={{ color: '#341405', fontSize: '16px' }}
-                          >
-                            My Profile
-                          </Link>
+                          My Profile
+                        </Link>
 
-                          <button
-                            onClick={() => {
-                              setIsLogoutModalOpen(true);
-                              setIsUserDropdownOpen(false);
-                            }}
-                            className="block w-full text-left py-2"
-                            style={{ color: '#341405', fontSize: '16px' }}
-                          >
-                            Logout
-                          </button>
-                        </motion.div>
+                        <button
+                          onClick={() => {
+                            setIsLogoutModalOpen(true);
+                            setIsUserDropdownOpen(false);
+                          }}
+                          className="block w-full text-left px-4 py-2 hover:bg-[#E8D4A0] transition-colors"
+                          style={{ color: '#341405', fontSize: '15px', fontWeight: '500' }}
+                        >
+                          Logout
+                        </button>
+                      </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
@@ -456,37 +452,7 @@ const Header = ({ darkMode, setDarkMode }) => {
               </div>
             </div>
 
-            <motion.div
-              animate={{ top: navLayerTop }}
-              transition={{ duration: 0.3 }}
-              className="absolute hidden md:flex items-center"
-              style={{
-                width: '100%',
-                left: 0,
-                transform: 'translateX(0)',
-                justifyContent: 'center',
-                gap: '12px',
-                height: '40px',
-                pointerEvents: 'auto',
-                zIndex: 10000
-              }}
-            >
-              {navItems.map((item) => (
-                <div
-                  key={item.label}
-                  style={{
-                    width: '24px',  // Reduced from 34px
-                    height: '24px',
-                    color: '#341405',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
-                >
-                  <FiUser size={24} />  {/* Reduced from 34 */}
-                </button>
-              )}
-            </div>
+
           </div>
         </motion.header>
       )}

@@ -412,6 +412,43 @@ class ProductService {
     }
   }
 
+  // Fetch fragrant favorites collection
+  async getFragrantFavoritesProducts(params = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.append('category', 'home');
+      queryParams.append('collection', 'fragrant-favourites');
+      
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+
+      const endpoint = `/api/products?${queryParams.toString()}`;
+      const response = await this.apiCall(endpoint);
+      
+      if (response.success && response.data) {
+        response.data = Array.isArray(response.data)
+          ? response.data.map(product => {
+              const normalized = this.normalizeProductImages(product);
+              normalized.sizes = this.normalizeSizes(normalized.sizes || []);
+              return normalized;
+            })
+          : response.data;
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error fetching fragrant favorites:', error);
+      return {
+        success: false,
+        data: [],
+        message: error.message
+      };
+    }
+  }
+
   // Fetch home page banners
   async getHomeBanners() {
     try {

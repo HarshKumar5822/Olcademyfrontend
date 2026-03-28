@@ -250,14 +250,6 @@ const GenderFreeFragranceCollection = () => {
           <motion.button
             onClick={(e) => {
               if (e && e.stopPropagation) e.stopPropagation();
-
-              // If product is already in cart -> open right-side cart sidebar
-              if (productInCart) {
-                setIsCartOpen(true);
-                return;
-              }
-
-              // Otherwise add to cart
               handleAddToCart(e);
             }}
             whileHover={{ scale: 1.02 }}
@@ -271,7 +263,7 @@ const GenderFreeFragranceCollection = () => {
             }}
           >
             {isAddingToCart ? <RefreshCw size={20} className="animate-spin" /> : <ShoppingCart size={20} />}
-            <span>{isAddingToCart ? "Adding..." : productInCart ? "View Cart" : "Add to Cart"}</span>
+            <span>{isAddingToCart ? "Adding..." : "Add to Cart"}</span>
           </motion.button>
         </div>
       </motion.div>

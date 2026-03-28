@@ -41,14 +41,24 @@ export default function ProductDetailPage() {
   // State management for notifications
   const [notifications, setNotifications] = useState([]);
 
+  // Check if current page is a scent page
+  const isScentPage = location.pathname.startsWith('/scent');
+
   //img handler
   const resolveImage = (image) => {
     if (!image) return '/images/default-perfume.png';
-
     if (image.startsWith('http')) return image;
+    
+    // If it's a root-relative path (like /images/foo.png), point it to the backend
+    if (image.startsWith('/')) {
+      return `${API_BASE_URL}${image}`;
+    }
 
-    // Backend-served image
-    return `${API_BASE_URL}/api/products/images/${image}`;
+    // Use ScentService (class with static method) or ProductService (pre-instantiated object)
+    if (isScentPage) {
+      return ScentService.constructImageURL(image);
+    }
+    return ProductService.constructImageURL(image);
   };
 
   // Add notification helper
@@ -59,9 +69,6 @@ export default function ProductDetailPage() {
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     }, 3000);
   }, []);
-  // Check if current page is a scent page
-  const isScentPage = location.pathname.startsWith('/scent');
-
   // Fetch product details on id/path change
   useEffect(() => {
     const fetchProductDetailPage = async () => {
@@ -382,7 +389,7 @@ export default function ProductDetailPage() {
                         }`}
                     >
                       <img
-                        src={image}
+                        src={resolveImage(image)}
                         alt={`${product.name} thumbnail ${index + 1}`}
                         className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-105"
                       />
@@ -396,9 +403,7 @@ export default function ProductDetailPage() {
             <div className="flex-1 flex items-center justify-center">
               <img
                 src={
-                  selectedImage ||
-                  product.images?.[0] ||
-                  '/images/default-perfume.png'
+                  resolveImage(selectedImage || (product.images?.[0]))
                 }
                 alt={product.name}
                 className="w-full max-w-[600px] h-auto max-h-[450px] object-contain bg-white transition-all duration-500 ease-in-out"
@@ -474,22 +479,13 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Add to Cart or View in Cart */}
-            {isInCart ? (
-              <button
-                className="font-medium text-base uppercase tracking-widest w-full py-2.5 mt-0 border-0 rounded-none bg-[#431A06] text-white"
-                onClick={handleOpenCart} // OPEN CART on click
-              >
-                View in Cart
-              </button>
-            ) : (
-              <button
-                className="font-medium text-base uppercase tracking-widest w-full py-2.5 mt-0 border-0 rounded-none bg-[#431A06] text-white"
-                onClick={handleAdd}
-              >
-                Add to Cart
-              </button>
-            )}
+            {/* Add to Cart Button */}
+            <button
+              className="font-medium text-base uppercase tracking-widest w-full py-2.5 mt-0 border-0 rounded-none bg-[#431A06] text-white"
+              onClick={handleAdd}
+            >
+              Add to Cart
+            </button>
 
             {/* Tabs */}
             <div className="mt-8">

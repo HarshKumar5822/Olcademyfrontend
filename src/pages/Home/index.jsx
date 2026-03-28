@@ -1,60 +1,29 @@
+import React, { useEffect, useRef, useState, useCallback, memo, useMemo } from 'react';
 import Header from '../../components/common/Header';
 import Footer from '../../components/common/Footer';
-import HeroSection from '../../components/common/HeroSection';
-import Button from '../../components/ui/Button';
-import Card from '../../components/ui/Card';
-import InputField from '../../components/ui/InputField';
-import Checkbox from '../../components/ui/Checkbox';
-import ProductCartSection from '../../pages/ProductCartSection'; // ADD THIS IMPORT
+import ProductCartSection from '../../pages/ProductCartSection';
 import { API_BASE_URL } from '../../api/constant';
-import { useEffect, useRef, useState, useCallback, memo, useMemo } from 'react';
 import { useCart } from '@/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import PerfumeSlideAnimation from '../../components/PerfumeSlideAnimation/PerfumeSlideAnimation';
-import { fadeIn } from '../../variants';
-import HeroSectionMobile from '@/components/Mobile/HeroSectionMobile';
-import ProductHighlightMobile from '@/components/Mobile/ProductHighlightMobile';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Star,
-  RefreshCw,
-  ShoppingBag,
-  Eye,
-  CheckCircle,
-  AlertCircle,
-  Heart,
-  ShoppingCart,
-  X
-} from 'lucide-react';
-import { FiHeart } from 'react-icons/fi';
+import { ChevronLeft, ChevronRight, Star, AlertCircle, ShoppingCart, Heart, Eye, X, CheckCircle, Search } from 'lucide-react';
+import { FiHeart, FiSearch, FiShoppingBag } from 'react-icons/fi';
 import { useWishlist } from '@/WishlistContext';
 import ProductService from '../../services/productService';
 import ScentService from '../../services/scentService';
-import CollectionHighlightMobile from '@/components/Mobile/CollectionHighlightMobile';
-import ProductCardsMobile from '@/components/Mobile/ProductCardsMobile';
 
 const HomePage = () => {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const scrollRef = useRef(null);
-  const summerScrollRef = useRef(null);
-  const signatureScrollRef = useRef(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [summerCurrentIndex, setSummerCurrentIndex] = useState(0);
-  const [signatureCurrentIndex, setSignatureCurrentIndex] = useState(0);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   const { addToCart, cartItems, isInCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
+  const navigate = useNavigate();
 
-  const [expandedSections, setExpandedSections] = useState({});
-
-  // ADD THIS STATE FOR CART SIDEBAR
-  const [isCartOpen, setIsCartOpen] = useState(false);
-
-  // Backend data state
   const [collections, setCollections] = useState({
     fragrant_favourites: [],
     summer_scents: [],
@@ -69,20 +38,7 @@ const HomePage = () => {
     collection_highlight: [],
   });
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Toggle section expansion - MEMOIZED
-  const toggleSection = useCallback((sectionKey) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [sectionKey]: !prev[sectionKey]
-    }));
-  }, []);
-
-  // UPDATED: Enhanced notification system matching MensCollection
   const [notifications, setNotifications] = useState([]);
-  // UPDATED: Enhanced notification helper with proper action type parameter (matching MensCollection)
   const addNotification = useCallback((message, type = 'success', productName = null, actionType = 'cart') => {
     const id = Date.now();
     setNotifications((prev) => [...prev, { id, message, type, productName, actionType }]);
@@ -90,9 +46,9 @@ const HomePage = () => {
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     }, 3000);
   }, []);
+
   const [quickViewProduct, setQuickViewProduct] = useState(null);
 
-  // Load theme preference
   useEffect(() => {
     const stored = localStorage.getItem('darkMode');
     if (stored !== null) setDarkMode(JSON.parse(stored));
@@ -102,231 +58,75 @@ const HomePage = () => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  //Mobile UI or Desktop Ui
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-
-  // Enhanced Banner Click Handler
-  const handleBannerClick = async (banner) => {
-    if (banner && banner._id) {
-      try {
-        await ProductService.trackBannerClick(banner._id);
-      } catch (error) {
-        console.error('Error tracking banner click:', error);
-      }
-    }
-
-    if (banner.buttonLink) {
-      navigate(banner.buttonLink);
-    } else if (
-      banner.type === 'trending_collection' ||
-      banner.title?.toLowerCase().includes('trending')
-    ) {
-      navigate('/trending-collection');
-    } else if (
-      banner.type === 'best_seller_collection' ||
-      banner.title?.toLowerCase().includes('best seller')
-    ) {
-      navigate('/best-sellers-collection');
-    } else {
-      console.log('Banner clicked but no specific navigation defined:', banner);
-    }
-  };
-
-
-
-  // Updated fetchHomeData with scent integration
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
         setLoading(true);
         setError(null);
-
-        console.log('🔍 Fetching home page data...');
-
         const [productsResponse, bannersResponse, scentsResponse] = await Promise.all([
-          ProductService.getHomeCollections().catch((err) => {
-            console.error('Products fetch error:', err);
-            return { success: false, error: err.message };
-          }),
-          ProductService.getHomeBanners().catch((err) => {
-            console.error('Banners fetch error:', err);
-            return { success: false, error: err.message };
-          }),
-          ScentService.getFeaturedScents().catch((err) => {
-            console.error('Scents fetch error:', err);
-            return { success: false, error: err.message };
-          }),
+          ProductService.getHomeCollections().catch((err) => ({ success: false, error: err.message })),
+          ProductService.getHomeBanners().catch((err) => ({ success: false, error: err.message })),
+          ScentService.getFeaturedScents().catch((err) => ({ success: false, error: err.message })),
         ]);
 
-        console.log('Home Products Response:', productsResponse);
-        console.log('Home Banners Response:', bannersResponse);
-        console.log('Scents Response:', scentsResponse);
-
         if (productsResponse.success && productsResponse.data) {
-          const safeCollections = {
+          setCollections(prev => ({
+            ...prev,
             fragrant_favourites: productsResponse.data.fragrant_favourites || [],
             summer_scents: productsResponse.data.summer_scents || [],
             signature_collection: productsResponse.data.signature_collection || [],
-          };
-
-          console.log('✅ Collections processed:', {
-            fragrant_favourites: safeCollections.fragrant_favourites.length,
-            summer_scents: safeCollections.summer_scents.length,
-            signature_collection: safeCollections.signature_collection.length,
-          });
-
-          setCollections(safeCollections);
-        } else {
-          console.warn('⚠️ Products fetch failed or empty:', productsResponse);
-          setCollections({
-            fragrant_favourites: [],
-            summer_scents: [],
-            signature_collection: [],
-            trending_scents: [],
-            best_seller_scents: []
-          });
+          }));
         }
 
         if (bannersResponse.success && bannersResponse.data) {
-          const bannersByType = {
-            hero: null,
-            product_highlight: [],
-            collection_highlight: [],
-          };
-
+          const bannersByType = { hero: null, product_highlight: [], collection_highlight: [] };
           (bannersResponse.data || []).forEach((banner) => {
-            if (banner.type === 'hero') {
-              bannersByType.hero = banner;
-            } else if (banner.type === 'product_highlight') {
-              bannersByType.product_highlight.push(banner);
-            } else if (banner.type === 'collection_highlight') {
-              bannersByType.collection_highlight.push(banner);
-            }
+            if (banner.type === 'hero') bannersByType.hero = banner;
+            else if (banner.type === 'product_highlight') bannersByType.product_highlight.push(banner);
+            else if (banner.type === 'collection_highlight') bannersByType.collection_highlight.push(banner);
           });
-
           setBanners(bannersByType);
-          console.log('✅ Banners processed:', bannersByType);
-        } else {
-          console.warn('⚠️ Banners fetch failed, using empty fallback');
-          setBanners({
-            hero: null,
-            product_highlight: [],
-            collection_highlight: [],
-          });
         }
 
         if (scentsResponse.success && scentsResponse.data) {
-          const scentsData = scentsResponse.data;
-          console.log('✅ Featured scents loaded:', {
-            trending: scentsData.trending?.length || 0,
-            best_seller: (scentsData.best_seller || scentsData.bestSellers)?.length || 0,
-            signature: scentsData.signature?.length || 0,
-          });
-
-          setCollections((prev) => ({
+          setCollections(prev => ({
             ...prev,
-            trending_scents: scentsData.trending || [],
-            best_seller_scents: scentsData.best_seller || scentsData.bestSellers || [],
+            trending_scents: scentsResponse.data.trending || [],
+            best_seller_scents: scentsResponse.data.best_seller || scentsResponse.data.bestSellers || [],
           }));
         }
       } catch (err) {
         console.error('❌ Error fetching home data:', err);
         setError(err.message);
-
-        setCollections({
-          fragrant_favourites: [],
-          summer_scents: [],
-          signature_collection: [],
-          trending_scents: [],
-          best_seller_scents: []
-        });
-        setBanners({
-          hero: null,
-          product_highlight: [],
-          collection_highlight: [],
-        });
       } finally {
         setLoading(false);
       }
     };
-
     fetchHomeData();
   }, []);
 
-  // Navigation functions with safety checks
-  const createNavFunction = (products = [], setIndex) => ({
-    next: () => {
-      if (!products || products.length <= 4) return;
-      setIndex((prev) => Math.min(prev + 1, products.length - 4));
-    },
-    prev: () => {
-      if (!products || products.length <= 4) return;
-      setIndex((prev) => Math.max(prev - 1, 0));
-    },
-  });
-
-  const fragrantFavouritesNav = createNavFunction(collections.fragrant_favourites, setCurrentIndex);
-  const summerScentsNav = createNavFunction(collections.summer_scents, setSummerCurrentIndex);
-  const signatureCollectionNav = createNavFunction(
-    collections.signature_collection,
-    setSignatureCurrentIndex
-  );
-
-  const validateEmail = (email) => {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-    return regex.test(email);
-  };
-
-
-  // const handleSubscribe = () => {
-  //   if (email && acceptTerms) {
-  //     addNotification('Thank you for subscribing to our exclusive circle!', 'success', null, 'general');
-  //     setEmail('');
-  //     setAcceptTerms(false);
-  //   } else {
-  //     addNotification('Please enter your email and accept terms to continue.', 'error', null, 'general');
-  //   }
-  // };
-
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 
   const handleSubscribe = async () => {
-    // setAcceptTerms(true);
-    if (!email) {
-      addNotification("Please enter your email", "error", null, "general");
-      return;
-    }
-
-    if (!validateEmail(email)) {
-      addNotification("Please enter a valid email address", "error", null, "general");
-      return;
-    }
-
-    if (!acceptTerms) {
-      addNotification("Please accept terms & conditions", "error", null, "general");
-      return;
-    }
+    if (!email) return addNotification("Please enter your email", "error", null, "general");
+    if (!validateEmail(email)) return addNotification("Please enter a valid email address", "error", null, "general");
+    if (!acceptTerms) return addNotification("Please accept terms & conditions", "error", null, "general");
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/subscribe`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      console.log("Response status:", res.status);
-
       const data = await res.json();
-
       if (data.success) {
         addNotification("Welcome to the Inner Circle!", "success", email, "general");
         setEmail("");
@@ -335,743 +135,24 @@ const HomePage = () => {
         addNotification(data.message, "error", null, "general");
       }
     } catch (error) {
-      console.error("Subscribe error:", error);
       addNotification("Something went wrong. Please try again.", "error", null, "general");
     }
   };
 
-
-
-  // Enhanced product navigation handler with validation
   const handleProductClick = (product) => {
-    if (!product) {
-      console.error('❌ No product data provided for navigation');
-      return;
-    }
-
-    if (!product._id) {
-      console.error('❌ Product missing _id:', product);
-      addNotification('Product not available', 'error', null, 'general');
-      return;
-    }
-
-    const productId = product._id.toString();
-    if (productId.length !== 24) {
-      console.error('❌ Invalid product ID format:', productId);
-      addNotification('Product not available', 'error', null, 'general');
-      return;
-    }
-
-    console.log('🔗 Navigating to product:', {
-      id: productId,
-      name: product.name,
-      category: product.category,
-    });
-
-    try {
-      navigate(`/product/${productId}`);
-    } catch (error) {
-      console.error('❌ Navigation error:', error);
-      window.location.href = `/product/${productId}`;
+    if (product && product._id) {
+      navigate(`/product/${product._id.toString()}`);
     }
   };
 
-  // UPDATED ProductCard Component with proper notification calls
-  const ProductCard = memo(({ product }) => {
-    const [isHovered, setIsHovered] = useState(false);
-    const [imageError, setImageError] = useState({ primary: false, hover: false });
-    const [isAddingToCart, setIsAddingToCart] = useState(false);
-
-    if (!product) return null;
-
-    const productInCart = isInCart(product._id?.toString(), product.sizes && product.sizes.length > 0 ? product.sizes[0].size : null);
-
-    const handleAddToCart = async (e) => {
-      e.stopPropagation();
-      setIsAddingToCart(true);
-
-      const cartItem = {
-        id: product._id.toString(),
-        name: product.name,
-        price: Number(product.price),
-        image: product.images && product.images.length > 0 ? product.images[0] : '/images/default-gift.png',
-        quantity: 1,
-        selectedSize: product.sizes && product.sizes.length > 0 ? product.sizes[0].size : null,
-        personalization: null
-      };
-
-      try {
-        const success = await addToCart(cartItem);
-        if (success) {
-          // UPDATED: Pass 'cart' as actionType with product name
-          addNotification('Added to cart!', 'success', product.name, 'cart');
-        } else {
-          addNotification('Failed to add item to cart', 'error', null, 'cart');
-        }
-      } catch (error) {
-        console.error('Add to cart error:', error);
-        addNotification('Something went wrong. Please try again.', 'error', null, 'cart');
-      } finally {
-        setIsAddingToCart(false);
-      }
-    };
-
-    const handleWishlistToggle = (e) => {
-      e.stopPropagation();
-      if (!product._id) {
-        addNotification('Unable to add to wishlist', 'error', null, 'wishlist');
-        return;
-      }
-
-      try {
-        const wasInWishlist = isInWishlist(product._id);
-
-        const wishlistProduct = {
-          id: product._id.toString(),
-          name: product.name,
-          price: product.price,
-          image: product.images && product.images.length > 0 ? product.images[0] : '/images/default-gift.png',
-          description: product.description || '',
-          category: product.category || '',
-          selectedSize: null
-        };
-
-        toggleWishlist(wishlistProduct);
-        // UPDATED: Pass 'wishlist' as actionType with product name
-        addNotification(
-          wasInWishlist ? 'Removed from wishlist' : 'Added to wishlist!',
-          'success',
-          product.name,
-          'wishlist'
-        );
-      } catch (error) {
-        console.error('Wishlist toggle error:', error);
-        addNotification('Failed to update wishlist', 'error', null, 'wishlist');
-      }
-    };
-
-    const handleCardClick = () => {
-      handleProductClick(product);
-    };
-
-    const getProductImage = () => {
-      if (isHovered && product.hoverImage && !imageError.hover) {
-        return product.hoverImage;
-      }
-      if (product.images && Array.isArray(product.images) && product.images.length > 0 && !imageError.primary) {
-        return product.images[0];
-      }
-      return '/images/default-gift.png';
-    };
-
-    const handleImageError = (e, type = 'primary') => {
-      setImageError(prev => ({ ...prev, [type]: true }));
-      e.target.src = '/images/default-gift.png';
-    };
-
-    return (
-      <motion.div
-        layout
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        whileHover={{ y: -8, boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}
-        transition={{ duration: 0.3 }}
-        className="bg-white dark:bg-gray-800 overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 w-full max-w-[290px] min-h-0 sm:min-h-[420px]"
-        style={{ height: 'auto' }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onClick={handleCardClick}
-      >
-        {/* Image Container with Wishlist Icon - RESPONSIVE */}
-        <div className="relative bg-white dark:bg-gray-700 flex items-center justify-center overflow-hidden w-full aspect-[290/240] p-3">
-          <motion.img
-            src={getProductImage()}
-            alt={product.name || 'Product'}
-            className="object-contain w-full h-full max-w-[220px] max-h-[220px]"
-            onError={(e) => handleImageError(e, isHovered ? 'hover' : 'primary')}
-            animate={{ scale: isHovered ? 1.08 : 1 }}
-            transition={{ duration: 0.4 }}
-            loading="lazy"
-          />
-
-          {/* Wishlist Heart Icon */}
-          <motion.button
-            onClick={handleWishlistToggle}
-            whileHover={{ scale: 1.15 }}
-            whileTap={{ scale: 0.9 }}
-            className="absolute top-2.5 right-2.5 bg-white dark:bg-gray-800 p-1.5 transition-all duration-200 z-10 w-[27px] h-[27px] flex items-center justify-center"
-            aria-label={isInWishlist(product._id) ? 'Remove from wishlist' : 'Add to wishlist'}
-          >
-            <FiHeart
-              size={14}
-              className={`transition-all duration-200 ${isInWishlist(product._id) ? 'fill-red-600 text-red-600' : 'text-gray-700 dark:text-gray-300'}`}
-            />
-          </motion.button>
-        </div>
-
-        {/* Product Info Container - RESPONSIVE */}
-        <div className="px-3 py-3 flex flex-col gap-2.5">
-          {/* Product Name */}
-          <h3
-            className="font-bold uppercase text-center line-clamp-2 text-base sm:text-lg"
-            style={{
-              fontFamily: 'Playfair Display, serif',
-              letterSpacing: '0.05em',
-              color: '#5A2408'
-            }}
-          >
-            {product.name || 'Product'}
-          </h3>
-
-          {/* Rating */}
-          <div className="flex items-center justify-center gap-1">
-            {product.rating ? (
-              <>
-                {[...Array(5)].map((_, index) => (
-                  <Star
-                    key={index}
-                    size={12}
-                    style={{ color: '#5A2408', fill: index < Math.floor(product.rating) ? '#5A2408' : 'transparent' }}
-                    className={`${index < Math.floor(product.rating) ? '' : 'opacity-30'}`}
-                  />
-                ))}
-              </>
-            ) : (
-              <div className="h-3"></div>
-            )}
-          </div>
-
-          {/* Description */}
-          <p
-            className="text-center line-clamp-2 text-[10px] sm:text-xs"
-            style={{
-              fontFamily: 'Manrope, sans-serif',
-              fontWeight: '500',
-              letterSpacing: '0.02em',
-              color: '#7E513A'
-            }}
-          >
-            {product.description || 'Premium fragrance'}
-          </p>
-
-          {/* Price */}
-          <p
-            className="font-bold text-center text-sm sm:text-base"
-            style={{
-              fontFamily: 'Manrope, sans-serif',
-              letterSpacing: '0.02em',
-              color: '#431A06'
-            }}
-          >
-            ${typeof product.price === 'number' ? product.price.toFixed(2) : '0.00'}
-          </p>
-
-          {/* UPDATED Add to Cart Button */}
-          <motion.button
-            onClick={productInCart ? (e) => {
-              e.stopPropagation();
-              setIsCartOpen(true);
-            } : handleAddToCart}
-            disabled={isAddingToCart}
-            whileHover={{ scale: 1.02, opacity: 0.9 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex items-center justify-center gap-2 text-white font-bold uppercase transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed w-full h-[40px] sm:h-[45px] text-[10px] sm:text-xs md:text-sm -mx-3 px-3"
-            style={{
-              backgroundColor: productInCart ? '#431A06' : '#431A06',
-              fontFamily: 'Manrope, sans-serif',
-              letterSpacing: '0.05em',
-              width: 'calc(100% + 24px)'
-            }}
-          >
-            <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
-            <span>
-              {isAddingToCart ? 'Adding...' : productInCart ? 'View Cart' : 'Add to Cart'}
-            </span>
-          </motion.button>
-        </div>
-      </motion.div>
-    );
-  });
-
-  ProductCard.displayName = 'ProductCard';
-
-  const CollectionSection = memo(({ title, products = [], sectionKey }) => {
-    const isExpanded = expandedSections[sectionKey];
-    const displayProducts = useMemo(() =>
-      isExpanded ? products : products.slice(0, 4),
-      [isExpanded, products]
-    );
-    const hasMoreProducts = products.length > 4;
-
-    return isMobile ? (
-      <ProductCardsMobile
-        title={title}
-        products={products}
-        darkMode={darkMode}
-      />
-    ) : (
-      <section className="py-10 sm:py-14 lg:py-16 px-4 sm:px-6 bg-[#F8F6F3] dark:bg-[#0d0603]">
-        <div className="max-w-[1555px] mx-auto">
-          {/* Section Title - RESPONSIVE */}
-          <motion.h3
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center font-bold mb-6 sm:mb-8 lg:mb-10 text-2xl sm:text-3xl lg:text-4xl"
-            style={{
-              fontFamily: 'Playfair Display, serif',
-              color: darkMode ? '#f6d110' : '#271004'
-            }}
-          >
-            {title}
-          </motion.h3>
-
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-16 w-16 sm:h-20 sm:w-20 lg:h-28 lg:w-28 border-b-2 border-[#79300f]"></div>
-            </div>
-          ) : products && products.length > 0 ? (
-            <>
-              {/* Products Grid - RESPONSIVE */}
-              <motion.div
-                layout
-                className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-7 lg:gap-10 mb-7 sm:mb-10 justify-items-center"
-              >
-                <AnimatePresence mode="popLayout">
-                  {displayProducts.map((product) => {
-                    if (!product || !product._id) return null;
-                    return (
-                      <ProductCard key={product._id} product={product} />
-                    );
-                  })}
-                </AnimatePresence>
-              </motion.div>
-
-              {/* View All Button - RESPONSIVE - EXACT STYLING MATCH */}
-              {hasMoreProducts && (
-                <div className="flex justify-center mt-6 sm:mt-8 lg:mt-10">
-                  <motion.button
-                    onClick={() => toggleSection(sectionKey)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="border-2 transition-all duration-300  w-full max-w-[250px] h-[40px] sm:h-[48px] px-5 flex items-center justify-center"
-                    style={{
-                      borderColor: '#431A06',
-                      backgroundColor: 'transparent',
-                      color: '#431A06'
-                    }}
-                  >
-                    <span
-                      className="text-sm sm:text-base font-bold uppercase"
-                      style={{
-                        fontFamily: 'Manrope, sans-serif',
-                        letterSpacing: '0.05em'
-                      }}
-                    >
-                      {isExpanded ? 'Show Less' : 'View all Fragrances'}
-                    </span>
-                  </motion.button>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-16">
-              <p className="text-base sm:text-lg text-gray-500 dark:text-gray-400">
-                No products available in this collection.
-              </p>
-              <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-                Please check back later or try refreshing the page.
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
-    );
-  });
-
-  CollectionSection.displayName = 'CollectionSection';
-
-  // Enhanced Dynamic Banner Component with click handling
-  const DynamicBanner = ({ banner, type = 'hero' }) => {
-    if (!banner) return null;
-
-    const handleClick = () => {
-      handleBannerClick(banner);
-    };
-
-    const getButtonAction = () => {
-      if (banner.buttonLink) return banner.buttonLink;
-
-      const title = banner.title?.toLowerCase() || '';
-      const description = banner.description?.toLowerCase() || '';
-
-      if (title.includes('trending') || description.includes('trending')) {
-        return '/trending-collection';
-      }
-      if (
-        title.includes('best seller') ||
-        description.includes('best seller') ||
-        title.includes('bestseller')
-      ) {
-        return '/best-sellers-collection';
-      }
-
-      return '#';
-    };
-
-    if (type === 'product_highlight') {
-      return isMobile ? (
-        <ProductHighlightMobile banner={banner} />
-      ) : (
-        <motion.section
-          variants={fadeIn('up', 0.2)}
-          initial="hidden"
-          whileInView="show"
-          className="py-16 px-6"
-          style={{ backgroundColor: '#F9F7F6' }}
-        >
-          <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 items-center">
-            <div className="text-left">
-              {banner.subtitle && (
-                <h3 className="text-lg text-[#79300f] font-semibold uppercase mb-3">
-                  {banner.subtitle}
-                </h3>
-              )}
-
-              <h2 className="text-[42px] font-dm-serif mb-6 text-black">
-                {banner.title} <br />
-                {banner.titleHighlight && (
-                  <span className="text-[#79300f]">{banner.titleHighlight}</span>
-                )}
-              </h2>
-              <p className="text-[18px] mb-6 text-[#5a2408] leading-relaxed">
-                {banner.description}
-              </p>
-
-              <button
-                onClick={handleClick}
-                className="bg-gradient-to-r from-[#431A06] to-[#5a2408] hover:from-[#431A06] hover:to-[#79300f] text-white px-8 py-3 text-lg font-semibold  transition-all duration-300 hover:shadow-lg transform hover:scale-105 flex items-center gap-3 w-fit"
-              >
-                <span>{banner.buttonText || 'Explore Collection'}</span>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
-                </svg>
-              </button>
-            </div>
-            <div className="relative h-[400px]">
-              <img
-                src={banner.image || '/images/newimg1.PNG'}
-                alt={banner.altText || banner.title}
-                className="w-full h-full object-cover shadow-lg"
-                onError={(e) => {
-                  console.warn('Banner image failed to load:', e.target.src);
-                  e.target.src = '/images/newimg1.PNG';
-                }}
-              />
-            </div>
-          </div>
-        </motion.section>
-      );
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    const query = e.target.search.value.trim();
+    if (query) {
+      navigate(`/search?q=${encodeURIComponent(query)}`);
     }
-
-    if (type === 'collection_highlight') {
-      return isMobile ? (
-        <CollectionHighlightMobile banner={banner} />
-      ) : (
-        <motion.section
-          variants={fadeIn('up', 0.2)}
-          initial="hidden"
-          whileInView="show"
-          className="py-16 px-6"
-          style={{ backgroundColor: '#F9F7F6' }}
-        >
-          <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-            <div className="text-left">
-              {banner.subtitle && (
-                <h3 className="text-lg text-[#79300f] font-semibold uppercase mb-3">
-                  {banner.subtitle}
-                </h3>
-              )}
-
-              <h2 className="text-[42px] font-dm-serif mb-6 text-black">
-                {banner.title} <br />
-                {banner.titleHighlight && (
-                  <span className="text-[#79300f]">{banner.titleHighlight}</span>
-                )}
-              </h2>
-              <p className="text-[18px] mb-6 text-[#5a2408] leading-relaxed">
-                {banner.description}
-              </p>
-
-              <button
-                onClick={handleClick}
-                className="bg-gradient-to-r from-[#431A06] to-[#5a2408] hover:from-[#431A06] hover:to-[#79300f] text-white px-8 py-3 text-lg font-semibold transition-all duration-300 hover:shadow-lg transform hover:scale-105 flex items-center gap-3 w-fit"
-              >
-                <span>{banner.buttonText || 'View Collection'}</span>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
-                </svg>
-              </button>
-            </div>
-            <div className="relative h-[400px]">
-              <img
-                src={banner.image || '/images/newimg1.PNG'}
-                alt={banner.altText || banner.title}
-                className="w-full h-full object-cover shadow-lg"
-                onError={(e) => {
-                  console.warn('Banner image failed to load:', e.target.src);
-                  e.target.src = '/images/newimg1.PNG';
-                }}
-              />
-            </div>
-          </div>
-        </motion.section>
-      );
-    }
-
-    return null;
   };
 
-  // Specific handler for Scent carousel navigation
-  const handleScentClick = (product) => {
-    if (!product || !product._id) return;
-    const productId = product._id.toString();
-    console.log('🔗 Navigating to scent:', productId);
-    navigate(`/scent/${productId}`);
-  };
-
-  // Best Seller Carousel Section
-  const BestSellerCarousel = memo(({ products = [] }) => {
-    const items = useMemo(
-      () => (Array.isArray(products) ? products : []).filter((p) => p && p._id).slice(0, 7),
-      [products]
-    );
-
-    if (!items.length) return null;
-
-    return (
-      <section className="relative w-full py-4 sm:py-6 px-4 sm:px-6" style={{ backgroundColor: '#F9F7F6' }}>
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-2 sm:mb-4 text-center">
-            <h2 className="font-[Playfair] font-bold text-2xl sm:text-3xl md:text-[36px]" style={{ color: '#271004' }}>
-              Our Favorites
-            </h2>
-          </div>
-
-          <PerfumeSlideAnimation products={items} onProductClick={handleScentClick} />
-        </div>
-      </section>
-    );
-  });
-
-  BestSellerCarousel.displayName = 'BestSellerCarousel';
-
-  // Quick View Modal
-  const QuickViewModal = () => {
-    if (!quickViewProduct) {
-      return null;
-    }
-
-    const handleClose = () => {
-      setQuickViewProduct(null);
-    };
-
-    const handleQuickViewWishlist = () => {
-      if (quickViewProduct._id) {
-        try {
-          const wishlistProduct = {
-            id: quickViewProduct._id.toString(),
-            name: quickViewProduct.name,
-            price: quickViewProduct.price,
-            image:
-              quickViewProduct.images && quickViewProduct.images.length > 0
-                ? quickViewProduct.images[0]
-                : '/images/default-gift.png',
-            description: quickViewProduct.description || '',
-            category: quickViewProduct.category || '',
-            selectedSize: null,
-          };
-
-          const wasInWishlist = isInWishlist(quickViewProduct._id);
-          toggleWishlist(wishlistProduct);
-          // UPDATED: Pass 'wishlist' as actionType with product name
-          addNotification(
-            wasInWishlist ? 'Removed from wishlist' : 'Added to wishlist!',
-            'success',
-            quickViewProduct.name,
-            'wishlist'
-          );
-        } catch (error) {
-          console.error('Wishlist toggle error:', error);
-          addNotification('Failed to update wishlist', 'error', null, 'wishlist');
-        }
-      } else {
-        addNotification('Unable to update wishlist', 'error', null, 'wishlist');
-      }
-    };
-
-    const handleQuickViewAddToCart = async () => {
-      if (!quickViewProduct._id) {
-        addNotification('Product not available', 'error', null, 'cart');
-        return;
-      }
-
-      const cartItem = {
-        id: quickViewProduct._id.toString(),
-        name: quickViewProduct.name,
-        price: Number(quickViewProduct.price),
-        image:
-          quickViewProduct.images && quickViewProduct.images.length > 0
-            ? quickViewProduct.images[0]
-            : '/images/default-gift.png',
-        quantity: 1,
-        selectedSize:
-          quickViewProduct.sizes && quickViewProduct.sizes.length > 0
-            ? quickViewProduct.sizes[0].size
-            : null,
-        personalization: null,
-      };
-
-      try {
-        const success = await addToCart(cartItem);
-        if (success) {
-          // UPDATED: Pass 'cart' as actionType with product name
-          addNotification('Added to cart!', 'success', quickViewProduct.name, 'cart');
-          handleClose();
-        } else {
-          addNotification('Failed to add item to cart', 'error', null, 'cart');
-        }
-      } catch (error) {
-        console.error('❌ Quick View Add to cart error:', error);
-        addNotification('Something went wrong. Please try again.', 'error', null, 'cart');
-      }
-    };
-
-    const productInQuickViewCart = isInCart(
-      quickViewProduct._id?.toString(),
-      quickViewProduct.sizes && quickViewProduct.sizes.length > 0
-        ? quickViewProduct.sizes[0].size
-        : null
-    );
-
-    return (
-      <AnimatePresence>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={handleClose}
-        >
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            className="bg-white  p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-[#79300f]">Quick View</h3>
-
-              <button
-                onClick={handleClose}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-                aria-label="Close quick view"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-8">
-              <div>
-                <img
-                  src={quickViewProduct.images?.[0] || '/images/default-gift.png'}
-                  alt={quickViewProduct.name || 'Product'}
-                  className="w-full h-64 object-contain  bg-gray-100"
-                  onError={(e) => {
-                    e.target.src = '/images/default-gift.png';
-                  }}
-                />
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="text-xl font-bold text-gray-900">
-                  {quickViewProduct.name || 'Unnamed Product'}
-                </h4>
-                <p className="text-gray-600">
-                  {quickViewProduct.description || 'No description available'}
-                </p>
-                <p className="text-2xl font-bold text-[#79300f]">
-                  ${quickViewProduct.price ? quickViewProduct.price.toFixed(2) : '0.00'}
-                </p>
-
-                <div className="flex gap-4">
-                  {productInQuickViewCart ? (
-                    <button
-                      onClick={() => {
-                        setIsCartOpen(true);
-                        handleClose();
-                      }}
-                      className="flex-1 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:via-teal-700 hover:to-cyan-700 text-white py-3  font-semibold hover:shadow-lg transition-all duration-300 flex items-center justify-center space-x-2 border border-emerald-400/30 shadow-emerald-500/20"
-                    >
-                      <ShoppingCart size={20} />
-                      <span>View in Cart</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleQuickViewAddToCart}
-                      className="flex-1 bg-gradient-to-r from-[#79300f] to-[#5a2408] text-white py-3  font-semibold hover:shadow-lg transition-all duration-300 flex items-center justify-center space-x-2"
-                    >
-                      <ShoppingBag size={20} />
-                      <span>Add to Cart</span>
-                    </button>
-                  )}
-                  <button
-                    onClick={handleQuickViewWishlist}
-                    className="px-4 py-3 border-2 border-[#79300f] text-[#79300f] hover:bg-[#79300f] hover:text-white transition-all duration-300"
-                    aria-label="Add to wishlist"
-                  >
-                    <Heart
-                      size={20}
-                      className={
-                        isInWishlist(quickViewProduct._id) ? 'fill-red-600 text-red-600' : ''
-                      }
-                    />
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (quickViewProduct._id) {
-                        navigate(`/product/${quickViewProduct._id}`);
-                        handleClose();
-                      } else {
-                        addNotification('Product details not available', 'error', null, 'general');
-                      }
-                    }}
-                    className="px-4 py-3 border-2 border-gray-300 text-gray-600  hover:bg-gray-300 hover:text-gray-800 transition-all duration-300"
-                    aria-label="View full details"
-                  >
-                    <Eye size={20} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      </AnimatePresence>
-    );
-  };
-
-  // UPDATED: Custom Notification System (exact match with MensCollection)
   const NotificationSystem = () => (
     <div className="fixed z-[9999] space-y-3" style={{ top: '40px', right: '20px' }}>
       <AnimatePresence>
@@ -1083,112 +164,21 @@ const HomePage = () => {
             exit={{ opacity: 0, x: 400, scale: 0.8 }}
             transition={{ duration: 0.3 }}
             style={{
-              position: 'relative',
-              width: '400px',
-              height: '100px',
-              backgroundColor: '#EDE4CF',
-              overflow: 'hidden',
-              boxShadow: '4px 6px 16px 0px rgba(0,0,0,0.1), 18px 24px 30px 0px rgba(0,0,0,0.09), 40px 53px 40px 0px rgba(0,0,0,0.05), 71px 95px 47px 0px rgba(0,0,0,0.01), 110px 149px 52px 0px rgba(0,0,0,0)',
-              borderRadius: '4px'
+              position: 'relative', width: '400px', height: '100px', backgroundColor: '#EDE4CF', overflow: 'hidden',
+              boxShadow: '4px 6px 16px 0px rgba(0,0,0,0.1)', borderRadius: '4px'
             }}
           >
-            {/* Left Vertical Bar */}
-            <div
-              style={{
-                position: 'absolute',
-                left: '16px',
-                top: '0',
-                width: '12px',
-                height: '100%',
-                backgroundColor: '#AC9157'
-              }}
-            />
-            {/* Icon - Show correct icon based on actionType */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '30px',
-                left: '36px',
-                width: '40px',
-                height: '40px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              {notification.type === 'error' ? (
-                <AlertCircle size={40} style={{ color: '#AC9157' }} strokeWidth={1.5} />
-              ) : notification.actionType === 'wishlist' ? (
-                <Heart size={40} style={{ color: '#AC9157' }} strokeWidth={1.5} />
-              ) : notification.actionType === 'cart' ? (
-                <ShoppingCart size={40} style={{ color: '#AC9157' }} strokeWidth={1.5} />
-              ) : (
-                <CheckCircle size={40} style={{ color: '#AC9157' }} strokeWidth={1.5} />
-              )}
+            <div style={{ position: 'absolute', left: '16px', top: '0', width: '12px', height: '100%', backgroundColor: '#AC9157' }} />
+            <div style={{ position: 'absolute', top: '30px', left: '36px', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {notification.type === 'error' ? <AlertCircle size={40} style={{ color: '#AC9157' }} /> : notification.actionType === 'wishlist' ? <Heart size={40} style={{ color: '#AC9157' }} /> : notification.actionType === 'cart' ? <ShoppingCart size={40} style={{ color: '#AC9157' }} /> : <CheckCircle size={40} style={{ color: '#AC9157' }} />}
             </div>
-            {/* Close Icon */}
-            <button
-              onClick={() => {
-                setNotifications(prev => prev.filter(n => n.id !== notification.id));
-              }}
-              style={{
-                position: 'absolute',
-                top: '8px',
-                right: '8px',
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0
-              }}
-              aria-label="Close notification"
-            >
-              <X size={24} style={{ color: '#242122' }} strokeWidth={2} />
+            <button onClick={() => setNotifications(prev => prev.filter(n => n.id !== notification.id))} style={{ position: 'absolute', top: '8px', right: '8px', border: 'none', background: 'transparent', cursor: 'pointer' }}>
+              <X size={24} style={{ color: '#242122' }} />
             </button>
-            {/* Title Text - Show correct title based on actionType */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '22px',
-                left: '96px',
-                fontFamily: 'Playfair Display, serif',
-                fontWeight: 700,
-                fontSize: '22px',
-                lineHeight: '26px',
-                color: '#242122',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {notification.type === 'error'
-                ? 'Error'
-                : notification.actionType === 'wishlist'
-                  ? (notification.message.includes('Removed') ? 'Removed from Wishlist' : 'Added to Wishlist')
-                  : notification.actionType === 'cart'
-                    ? 'Added to Cart'
-                    : 'Success'
-              }
+            <div style={{ position: 'absolute', top: '22px', left: '96px', fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: '22px', color: '#242122' }}>
+              {notification.type === 'error' ? 'Error' : notification.actionType === 'wishlist' ? (notification.message.includes('Removed') ? 'Removed from Wishlist' : 'Added to Wishlist') : notification.actionType === 'cart' ? 'Added to Cart' : 'Success'}
             </div>
-            {/* Product Name or Message */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '56px',
-                left: '96px',
-                width: '271px',
-                fontFamily: 'Manrope, sans-serif',
-                fontWeight: 400,
-                fontSize: '16px',
-                lineHeight: '22px',
-                color: '#5B5C5B',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-            >
+            <div style={{ position: 'absolute', top: '56px', left: '96px', width: '271px', fontFamily: 'Manrope, sans-serif', fontSize: '16px', color: '#5B5C5B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {notification.productName || notification.message}
             </div>
           </motion.div>
@@ -1197,149 +187,344 @@ const HomePage = () => {
     </div>
   );
 
+  const ProductCard = memo(({ product }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
+
+    if (!product) return null;
+    const productInCart = isInCart(product._id?.toString(), product.sizes && product.sizes.length > 0 ? product.sizes[0].size : null);
+
+    const handleAddToCart = async (e) => {
+      e.stopPropagation();
+      setIsAddingToCart(true);
+      const cartItem = {
+        id: product._id.toString(), name: product.name, price: Number(product.price),
+        image: product.images && product.images.length > 0 ? product.images[0] : '/images/default-gift.png',
+        quantity: 1, selectedSize: product.sizes && product.sizes.length > 0 ? product.sizes[0].size : null, personalization: null
+      };
+
+      try {
+        const success = await addToCart(cartItem);
+        if (success) addNotification('Added to cart!', 'success', product.name, 'cart');
+        else addNotification('Failed to add item to cart', 'error', null, 'cart');
+      } catch (error) {
+        addNotification('Something went wrong. Please try again.', 'error', null, 'cart');
+      } finally {
+        setIsAddingToCart(false);
+      }
+    };
+
+    const handleWishlistToggle = (e) => {
+      e.stopPropagation();
+      if (!product._id) return addNotification('Unable to add to wishlist', 'error', null, 'wishlist');
+      try {
+        const wasInWishlist = isInWishlist(product._id);
+        const wishlistProduct = {
+          id: product._id.toString(), name: product.name, price: product.price,
+          image: product.images && product.images.length > 0 ? product.images[0] : '/images/default-gift.png',
+          description: product.description || '', category: product.category || '', selectedSize: null
+        };
+        toggleWishlist(wishlistProduct);
+        addNotification(wasInWishlist ? 'Removed from wishlist' : 'Added to wishlist!', 'success', product.name, 'wishlist');
+      } catch (error) {
+        addNotification('Failed to update wishlist', 'error', null, 'wishlist');
+      }
+    };
+
+    return (
+      <div className="bg-white border text-center border-gray-100 flex flex-col group transition-all duration-300 hover:shadow-xl cursor-pointer w-full" onClick={() => handleProductClick(product)}>
+        <div className="relative p-6 aspect-square flex items-center justify-center bg-white overflow-hidden">
+          <img 
+            src={product.images && product.images[0] ? product.images[0] : '/images/default-gift.png'} 
+            className="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105" 
+            alt={product.name} 
+            onError={(e) => { e.target.src = '/images/default-gift.png' }}
+          />
+          <button onClick={handleWishlistToggle} className="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors z-10 w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm opacity-0 group-hover:opacity-100">
+            <FiHeart size={16} className={isInWishlist(product._id) ? 'fill-black text-black' : ''} />
+          </button>
+        </div>
+        <div className="p-4 md:p-5 flex-1 flex flex-col items-center justify-between">
+          <div className="w-full mb-4">
+             <h3 className="font-['Playfair_Display'] text-[15px] sm:text-[16px] xl:text-[18px] mb-2 font-medium tracking-wide line-clamp-1">{product.name}</h3>
+             <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 w-full text-xs sm:text-sm">
+               <span className="font-bold text-gray-900">${typeof product.price === 'number' ? product.price.toFixed(2) : '0.00'}</span>
+               {product.rating && (
+                 <span className="flex items-center text-[#D4AF37] font-semibold">
+                    <Star size={12} className="fill-[#D4AF37] ml-0.5 mr-1" />
+                    {product.rating.toFixed(1)}
+                 </span>
+               )}
+             </div>
+          </div>
+          <button 
+            onClick={handleAddToCart}
+            disabled={isAddingToCart}
+            className="w-full bg-[#1A1A1A] text-white text-[10px] sm:text-[12px] font-bold tracking-widest py-3 hover:bg-black transition-colors flex items-center justify-center gap-2"
+          >
+            <FiShoppingBag size={14} />
+            {isAddingToCart ? 'ADDING...' : 'ADD TO CART'}
+          </button>
+        </div>
+      </div>
+    );
+  });
+  ProductCard.displayName = 'ProductCard';
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F9F7F6' }}>
+    <div className="min-h-screen flex flex-col font-['Manrope'] bg-white w-full overflow-x-hidden">
       <Header />
       <NotificationSystem />
-      <QuickViewModal />
-
-      {/* CART SIDEBAR - ADD THIS */}
       <ProductCartSection isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-
-      <main className="flex-1" style={{ backgroundColor: '#F9F7F6' }}>
-        {/* HeroSection */}
-        {banners.hero &&
-          (isMobile ? (
-            <HeroSectionMobile />
-          ) : (
-            <HeroSection
-              title={banners.hero.title || 'Discover Luxury Gifts'}
-              subtitle={banners.hero.subtitle || 'Explore our exclusive collections'}
-              image={banners.hero.image || '/images/hero-default.jpg'}
-              buttonText="Shop Now"
-              onButtonClick={() => handleBannerClick(banners.hero)}
-            />
-          ))}
-
-
-        {/* Best Sellers Carousel */}
-        {collections.best_seller_scents && collections.best_seller_scents.length > 0 && (
-          <BestSellerCarousel products={collections.best_seller_scents} />
-        )}
-
-        {error && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="max-w-7xl mx-auto px-6 py-4 text-red-600"
-          >
-            <AlertCircle size={20} className="inline mr-2" />
-            {error}
-          </motion.div>
-        )}
-
-        <CollectionSection
-          title="Fragrant Favourites"
-          products={collections.fragrant_favourites}
-          index={currentIndex}
-          navigation={fragrantFavouritesNav}
-          scrollRef={scrollRef}
-          sectionKey="fragrant_favourites"
-        />
-
-        {/* Dynamic Product Highlight Banners */}
-        {banners.product_highlight.map((banner, index) => (
-          <DynamicBanner key={banner._id || index} banner={banner} type="product_highlight" />
-        ))}
-
-        <CollectionSection
-          title="Summer Scents"
-          products={collections.summer_scents}
-          index={summerCurrentIndex}
-          navigation={summerScentsNav}
-          scrollRef={summerScrollRef}
-          sectionKey="summer_scents"
-        />
-
-        {/* Dynamic Collection Highlight Banners */}
-        {banners.collection_highlight.map((banner, index) => (
-          <DynamicBanner key={banner._id || index} banner={banner} type="collection_highlight" />
-        ))}
-
-        <CollectionSection
-          title="Signature Collection"
-          products={collections.signature_collection}
-          index={signatureCurrentIndex}
-          navigation={signatureCollectionNav}
-          scrollRef={signatureScrollRef}
-          sectionKey="signature_collection"
-        />
-
-        <section className="bg-gradient-to-br from-[#1C160C] via-[#1C160C] to-[#292218] py-20 px-6 ">
-          <div className="max-w-3xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
+      
+      <main className="flex-1 w-full pt-16 lg:pt-24 mb-16">
+        
+        {/* HERO SECTION */}
+        <section className="w-full flex flex-col-reverse lg:flex-row items-center lg:items-start max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12 mb-20 lg:mb-32">
+          {/* Left Content */}
+          <div className="w-full lg:w-1/2 flex flex-col pt-8 lg:pt-16 lg:pr-16">
+            <form onSubmit={handleSearchSubmit} className="w-full md:max-w-md flex border-b-2 border-[#D4AF37] pb-2 mb-10 lg:mb-16">
+              <FiSearch className="text-gray-400 mt-1.5 mr-3" size={18} />
+              <input 
+                type="text" 
+                name="search"
+                placeholder="Search Perfume/Fragrance" 
+                className="flex-1 outline-none text-sm bg-transparent placeholder-gray-400"
+              />
+              <button type="submit" className="bg-[#D4AF37] text-white text-[11px] font-bold px-6 py-2 tracking-widest hover:bg-[#b8952b] transition-colors ml-2">SEARCH</button>
+            </form>
+            
+            <h1 className="text-4xl md:text-5xl lg:text-7xl font-['Playfair_Display'] text-[#1A1A1A] leading-[1.1] mb-6 tracking-tight">
+              Unveil Your<br className="hidden lg:block"/> Signature Scent
+            </h1>
+            <p className="text-gray-600 text-sm lg:text-base mb-10 max-w-sm leading-relaxed">
+              A fragrance that transcends time, inspired by rare woods and exotic elegance.
+            </p>
+            <button 
+              onClick={() => navigate('/signature-collection')}
+              className="bg-[#D4AF37] text-white text-xs lg:text-sm font-bold tracking-widest px-8 py-4 w-max hover:bg-[#b8952b] transition-colors shadow-sm"
             >
-              <h2 className="text-[42px] md:text-[48px] font-dm-serif mb-4 bg-gradient-to-r from-[#CDAF6E] via-[#E4C77F] to-[#F5E6A1] bg-clip-text text-transparent leading-tight">
-                The Vesarii Inner Circle
-              </h2>
-              <p className="text-[16px] mb-10 text-[#EFE9E6] leading-relaxed max-w-xl mx-auto">
-                Private access to rare editions, secret previews, and Parisian inspirations.
-              </p>
-            </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="max-w-2xl mx-auto"
-            >
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <input
-                  type="email"
-                  placeholder="EMAIL"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="px-6 py-4 flex-1 outline-none border border-[#D4AF7A]/40 focus:border-[#D4AF7A] transition-all duration-300 bg-transparent
-    bg-gradient-to-br from-[#CDAF6E] via-[#E4C77F] to-[#F5E6A1] bg-clip-text text-transparent
-    placeholder:text-transparent placeholder:bg-gradient-to-br placeholder:from-[#CDAF6E] placeholder:via-[#E4C77F] placeholder:to-[#E4C77F] placeholder:bg-clip-text caret-[#D4AF7A]
-"
-                />
-                <Button
-                  onClick={handleSubscribe}
-                  className="bg-gradient-to-br from-[#CDAF6E] via-[#E4C77F] to-[#F5E6A1]  px-6 py-2  font-bold text-sm  hover:bg-[#E4BF8A] transition-colors tracking-wider whitespace-nowrap font-[Manrope] !text-[#341405]"
-                >
-                  JOIN THE CIRCLE
-                </Button>
-              </div>
+              SHOP NOW
+            </button>
+          </div>
 
-              {/* ✅ ADD THIS BLOCK (THIS WAS MISSING) */}
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <input
-                  type="checkbox"
-                  id="acceptTerms"
-                  checked={acceptTerms}
-                  onChange={(e) => setAcceptTerms(e.target.checked)}
-                  className="w-4 h-4 cursor-pointer accent-[#CDAF6E]"
-                />
-
-                <label
-                  htmlFor="acceptTerms"
-                  className="text-sm text-[#EFE9E6] cursor-pointer select-none"
-                >
-                  I agree to the Terms & Conditions
-                </label>
-              </div>
-
-              <p className="text-[14px] text-[#EFE9E6]">
-                By joining, you'll receive updates on limited editions and private events.
-              </p>
-            </motion.div>
+          {/* Right Image */}
+          <div className="w-full lg:w-1/2 lg:-mt-4 relative aspect-[4/3] lg:aspect-[4/5] lg:h-[700px]">
+             <img src="/images/HomeHeroWoman.jpg" alt="Woman holding golden perfume bottle" className="w-full h-full object-cover shadow-2xl" onError={(e) => { e.target.src = '/images/newimg1.PNG' }} />
           </div>
         </section>
+
+        {/* OUR COLLECTION CAROUSEL */}
+        <section className="w-full mb-28 max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12 text-center">
+          <h2 className="font-['Playfair_Display'] text-2xl lg:text-3xl text-[#1A1A1A] font-semibold mb-12">Our Collection</h2>
+          
+          <div className="relative flex items-center justify-center">
+            <button className="hidden md:flex absolute left-0 z-10 w-10 h-10 rounded-full bg-[#E5D5A5] items-center justify-center text-white shrink-0 hover:bg-[#D4AF37] transition-colors shadow-sm cursor-pointer">
+               <ChevronLeft size={20} />
+            </button>
+            
+            <div className="flex w-full overflow-x-auto md:overflow-hidden justify-start md:justify-center gap-4 lg:gap-8 px-0 md:px-14 pb-4 scrollbar-hide">
+               {(collections.signature_collection.slice(0,4).length > 0 ? collections.signature_collection.slice(0,4) : [
+                 { _id: '1', name: 'Vetiver', productCode: 'M05', images: ['/images/1.png'] },
+                 { _id: '2', name: 'Santal', productCode: 'P46', images: ['/images/2.png'] },
+                 { _id: '3', name: 'Oud', productCode: 'W32', images: ['/images/3.png'] },
+                 { _id: '4', name: 'Rose', productCode: 'F40', images: ['/images/4.png'] },
+               ]).map((item, i) => (
+                  <div key={item._id || i} className="flex flex-col items-center shrink-0" onClick={() => handleProductClick(item)}>
+                    <div className="w-[140px] md:w-[200px] lg:w-[230px] aspect-square bg-white border border-gray-100 shadow-sm flex items-center justify-center mb-4 p-8 cursor-pointer hover:shadow-md transition-shadow group">
+                      <img 
+                        src={item.images?.[0] || '/images/default-gift.png'} 
+                        alt={item.name} 
+                        className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" 
+                        onError={(e) => { e.target.src = '/images/default-gift.png' }}
+                      />
+                    </div>
+                    <span className="text-[#1A1A1A] font-bold text-[10px] lg:text-xs font-['Manrope'] tracking-widest uppercase">{item.name}</span>
+                  </div>
+               ))}
+            </div>
+
+            <button className="hidden md:flex absolute right-0 z-10 w-10 h-10 rounded-full bg-[#E5D5A5] items-center justify-center text-white shrink-0 hover:bg-[#D4AF37] transition-colors shadow-sm cursor-pointer">
+               <ChevronRight size={20} />
+            </button>
+          </div>
+        </section>
+
+        {/* TRENDING SECTION */}
+        <section className="w-full max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12 mb-32">
+           <div className="flex flex-col md:flex-row gap-8 lg:gap-16 items-center">
+              <div className="w-full md:w-1/2 relative bg-gray-100 rounded-[2.5rem] overflow-hidden aspect-square lg:aspect-[4/5] xl:aspect-square shadow-xl group">
+                 <img src={banners.product_highlight[0]?.image || "/images/MensPerfume.jpg"} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Trending Scent" onError={(e) => { e.target.src = '/images/newimg1.PNG' }} />
+                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80" />
+                 <div className="absolute inset-0 p-8 lg:p-14 flex flex-col justify-between items-start">
+                    <h3 className="font-['Playfair_Display'] text-3xl md:text-4xl lg:text-[52px] text-white leading-[1.05] font-medium drop-shadow-md">
+                      {banners.product_highlight[0]?.title || "Soleil Blanc Oud\nImmortel"}
+                    </h3>
+                    <button className="bg-white/95 backdrop-blur-sm text-[#1A1A1A] text-[10px] lg:text-xs font-bold tracking-widest px-8 py-3.5 hover:bg-white hover:scale-105 transition-all shadow-lg mt-auto" onClick={() => navigate('/trending-collection')}>
+                      SHOP NOW
+                    </button>
+                 </div>
+              </div>
+              <div className="w-full md:w-1/2 flex flex-col pt-8 md:pt-0 lg:pl-10">
+                  <h2 className="font-['Playfair_Display'] text-3xl md:text-4xl lg:text-5xl text-[#1A1A1A] font-medium mb-6">Trending</h2>
+                  <p className="text-gray-500 text-sm lg:text-base leading-relaxed mb-10 max-w-lg">
+                    {banners.product_highlight[0]?.description || 
+                    "Spicy, warm, and inviting. Oud Immortel marries traditional intensity with modern vibrancy. Notes of black pepper blend effortlessly with rich woods and a subtle hint of sweet vanilla.\n\nPure, free-spirited, and sophisticated. My collection reflects the inner journey."}
+                  </p>
+                  <button className="bg-[#1A1A1A] text-white text-[10px] lg:text-xs font-bold tracking-widest px-8 py-4 w-max hover:bg-black hover:shadow-lg transition-all" onClick={() => navigate('/trending-collection')}>
+                    EXPLORE
+                  </button>
+              </div>
+           </div>
+        </section>
+
+        {/* FRAGRANT FAVORITES GRID 1 */}
+        {collections.fragrant_favourites.length > 0 && (
+        <section className="w-full max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12 mb-32">
+           <h2 className="font-['Playfair_Display'] text-2xl lg:text-[32px] text-[#1A1A1A] font-semibold mb-10">Fragrant Favorites</h2>
+           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+              {collections.fragrant_favourites.slice(0, 4).map(product => (
+                 <ProductCard key={product._id} product={product} />
+              ))}
+           </div>
+        </section>
+        )}
+
+        {/* STORY / NARRATIVE */}
+        <section className="w-full max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12 mb-32 pt-10">
+           <div className="flex flex-col lg:flex-row gap-16 lg:gap-24 items-center">
+              <div className="w-full lg:w-1/2 relative bg-[#F9F7F6]">
+                 <div className="bg-[#EFEAE4] absolute inset-x-8 -inset-y-8 z-0"></div>
+                 <img src="/images/NarrativeImage.jpg" alt="Model sitting on chair" className="w-full h-auto object-cover relative z-10 shadow-lg" onError={(e) => { e.target.src = '/images/hero-default.jpg' }} />
+                 <div className="absolute -bottom-10 right-0 md:-right-10 bg-white shadow-2xl p-8 md:p-10 max-w-[280px] md:max-w-[320px] border border-gray-50 z-20">
+                    <span className="text-[#D4AF37] text-5xl font-serif leading-none block mb-1">"</span>
+                    <p className="font-['Playfair_Display'] text-[#1A1A1A] text-lg md:text-xl italic mb-6 leading-relaxed">"Reflecting truth, the mind remains free of journey."</p>
+                    <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">- Johndoe -</p>
+                 </div>
+              </div>
+              <div className="w-full lg:w-1/2 flex flex-col pt-20 lg:pt-0">
+                  <span className="text-gray-400 text-[10px] lg:text-[11px] font-bold tracking-[0.2em] mb-4 uppercase">The Ingredients</span>
+                  <h2 className="font-['Playfair_Display'] text-4xl md:text-5xl lg:text-[56px] text-[#1A1A1A] leading-[1.1] mb-8 font-medium max-w-lg">
+                    A Scented Narrative<br className="hidden md:block"/> for the Soul
+                  </h2>
+                  <p className="text-gray-500 text-sm lg:text-base leading-relaxed mb-10 max-w-md">
+                    Experience craftmanship focused purely on quality and scent. 
+                    Reconnecting you back to its natural form. Our philosophy embraces a minimal, 
+                    deep, and true approach to ingredient sourcing.
+                  </p>
+                  <button className="text-[#D4AF37] text-[10px] lg:text-xs font-bold tracking-widest uppercase flex items-center gap-2 w-max hover:opacity-80 transition-opacity" onClick={() => navigate('/about-page')}>
+                    DISCOVER OUR STORY
+                    <ChevronRight size={14} />
+                  </button>
+              </div>
+           </div>
+        </section>
       </main>
+
+      {/* COMPLEX SECOND GRID & NEWSLETTER WRAPPER IN BEIGE */}
+      <div className="w-full bg-[#F5F3E9]">
+          
+          {/* FRAGRANT FAVORITES COMPLEX GRID */}
+          <section className="w-full max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12 py-24 pb-16">
+            <div className="text-center mb-16">
+              <h2 className="font-['Playfair_Display'] text-3xl lg:text-4xl text-[#1A1A1A] font-semibold mb-3">Fragrant Favorites</h2>
+              <p className="text-gray-500 text-sm font-['Manrope']">Enjoying the beautiful things with good chemistry.</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-5xl mx-auto">
+                {/* Left Large Banner Product */}
+                <div className="bg-white flex shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden border border-gray-100" onClick={() => navigate('/all-fragrances')}>
+                   <div className="w-1/2 p-8 lg:p-12 flex flex-col justify-center bg-white">
+
+                      <span className="text-[#D4AF37] text-[9px] font-bold tracking-widest uppercase mb-4">Trending</span>
+                      <h3 className="font-['Playfair_Display'] text-2xl lg:text-4xl text-[#1A1A1A] leading-[1.1] mb-4">Vetiver<br/> Extrême</h3>
+                      <p className="text-gray-400 text-[10px] lg:text-xs mb-8">The most evocative notes of raw woods.</p>
+                      <button className="bg-[#1A1A1A] text-white text-[9px] lg:text-[10px] font-bold tracking-widest px-6 py-2.5 w-max hover:bg-black">SHOP NOW</button>
+                   </div>
+                   <div className="w-1/2 bg-[#E1D1B7] relative p-8 flex items-center justify-center">
+                      <img src="/images/vetiver-default.png" alt="Vetiver Extreme" className="w-full object-contain drop-shadow-2xl mix-blend-multiply hover:scale-105 transition-transform duration-500" onError={(e) => { e.target.src = '/images/default-gift.png' }} />
+                   </div>
+                </div>
+
+                {/* Right Stack */}
+                <div className="flex flex-col gap-6">
+                   {/* Top Two Products */}
+                   <div className="grid grid-cols-2 gap-6 h-[60%]">
+                      {/* Sub card 1 */}
+                      <div className="bg-white p-6 md:p-8 flex flex-col shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate('/all-fragrances')}>
+                         <div className="flex-1 w-full bg-[#EAEAEA] flex items-center justify-center p-4 mb-4">
+                            <img src="/images/eau-default.png" alt="Eau pour le Soir" className="h-[120px] lg:h-[140px] mix-blend-multiply object-contain group-hover:scale-105 transition-transform" onError={(e) => { e.target.src = '/images/default-gift.png' }} />
+                         </div>
+                         <h4 className="font-['Playfair_Display'] text-[#1A1A1A] text-lg font-medium mb-1">Eau pour le Soir</h4>
+                         <span className="text-[#D4AF37] font-bold text-sm">$45.00</span>
+                      </div>
+                      {/* Sub card 2 */}
+                      <div className="bg-white p-6 md:p-8 flex flex-col shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate('/all-fragrances')}>
+                         <div className="flex-1 w-full bg-white flex items-center justify-center p-4 mb-4 border border-gray-50 shadow-inner">
+                            <img src="/images/bois-default.png" alt="Bois de Lune" className="h-[120px] lg:h-[140px] object-contain group-hover:scale-105 transition-transform" onError={(e) => { e.target.src = '/images/default-gift.png' }} />
+                         </div>
+                         <h4 className="font-['Playfair_Display'] text-[#1A1A1A] text-lg font-medium mb-1">Bois de Lune</h4>
+                         <span className="text-[#D4AF37] font-bold text-sm">$72.00</span>
+                      </div>
+                   </div>
+
+                   {/* Bottom Gift Card */}
+                   <div className="bg-[#EFE8D8] p-6 lg:p-8 flex items-center justify-between shadow-sm cursor-pointer hover:bg-[#E8DECA] transition-colors h-[40%]" onClick={() => navigate('/gift-collection')}>
+                      <div className="flex flex-col">
+                         <h4 className="font-['Playfair_Display'] text-[#1A1A1A] text-xl font-medium mb-2">The Gift Curation</h4>
+                         <p className="text-gray-500 text-[10px] md:text-xs">Available exclusively online and in-store.</p>
+                         <span className="text-[#D4AF37] text-[10px] font-bold tracking-widest leading-none mt-2">SHOP GIFTS</span>
+                      </div>
+                      <div className="w-12 h-12 rounded-full border border-[#CBA135] text-[#CBA135] flex items-center justify-center opacity-70">
+                         <FiShoppingBag size={20} />
+                      </div>
+                   </div>
+                </div>
+            </div>
+          </section>
+
+          {/* NEWSLETTER SECTION (No background, sits natively on Beige) */}
+          <section className="w-full max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12 py-20 pb-32 flex flex-col items-center">
+            <h2 className="text-3xl lg:text-[40px] font-['Playfair_Display'] text-[#1A1A1A] font-semibold mb-4 text-center">
+              The Vesarii Inner Circle
+            </h2>
+            <p className="text-gray-500 text-sm lg:text-base text-center mb-10 max-w-lg">
+              Priority access to new editions, special discounts, and behind-the-scenes content.
+            </p>
+            
+            <div className="w-full max-w-md flex flex-col gap-4">
+              <div className="flex w-full items-center mb-2">
+                <input 
+                  type="email" 
+                  placeholder="Email..." 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="flex-1 border-b border-gray-400 bg-transparent py-3 px-2 text-sm outline-none placeholder-gray-400 text-[#1A1A1A] focus:border-[#1A1A1A] transition-colors"
+                />
+                <button 
+                  onClick={handleSubscribe}
+                  className="bg-[#1A1A1A] text-white text-[10px] font-bold tracking-widest px-6 py-3.5 hover:bg-black transition-colors"
+                >
+                  JOIN THE CIRCLE
+                </button>
+              </div>
+              <div className="flex items-center gap-2 px-1">
+                <input 
+                  type="checkbox" 
+                  id="newsletter-terms" 
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  className="w-3.5 h-3.5 accent-[#1A1A1A]"
+                />
+                <label htmlFor="newsletter-terms" className="text-[10px] text-gray-400 cursor-pointer">
+                  I agree to receive communications in accordance with the Privacy Policy
+                </label>
+              </div>
+            </div>
+          </section>
+      </div>
+
       <Footer />
     </div>
   );

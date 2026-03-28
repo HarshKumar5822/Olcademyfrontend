@@ -202,8 +202,9 @@ export const CartProvider = ({ children }) => {
       // Check if product already exists in cart
       const exists = cartItems.find(item => item.id === product.id && item.selectedSize === product.selectedSize);
       if (exists) {
-        toast.error(`${product.name} (${product.selectedSize || 'Default'}) is already in your cart!`);
-        return false;
+        // If it exists, increment quantity instead of showing error
+        await updateQuantity(product.id, exists.quantity + 1);
+        return true;
       }
 
       const newItem = {
